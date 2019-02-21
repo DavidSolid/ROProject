@@ -1,0 +1,298 @@
+\documentclass[11pt,a4paper]{article}
+%\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\title{
+	Relazione di progetto didattico \\
+	Ricerca Operativa \\
+	A.A. 2018/2019
+}
+\author{Enrico Cancelli 1143080}
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+\section{Abstract}
+Lo scopo di questo progetto didattico è modellare un problema di programmazione lineare riguardante una linea di produzione di condensatori, tradurre tale modello in linguaggio \textit{AMPL} e risolverlo. In seguito verrà fatta un'analisi sui dati ottenuti, discutendo di eventuali valori spuri ottenuti.
+\section{Descrizione del problema}
+Un'azienda produce condensatori di due tipologie, elettrolitici e ceramici, in 3 differenti formati (o gradi di capacità): $500 \mu F$, $1000 \mu F$, $1500 \mu F$.
+Ciascun tipo di condensatore viene venduto ad un certo prezzo in euro (generalmente all'aumentare della capacità corrispondono guadagni maggiori) così come riportato nella seguente tabella: \\
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+ \hline
+ Tipologia/Formato & $500 \mu F$ & $1000 \mu F$ & $1500 \mu F$ \\
+ \hline
+ Elettrolitico  &    30.0     &     50.0     &     70.0     \\
+ \hline
+ Ceramico       &    20.0     &     40.0     &     60.0     \\
+ \hline
+\end{tabular}
+\end{center}
+Ciascun condensatore, a seconda della tipologia e formato, può essere prodotto utilizzando un certo numero di unità di uno o più materiali tra i seguenti:
+\begin{itemize}
+	\item{Alluminio(Al)}
+	\item{Ceramica}
+	\item{Rame(Cu)}
+\end{itemize}
+Il numero di unità di materiale necessario alla produzione di una tipologia di condensatore è riportato nella seguente tabella: \\
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+\hline
+ Tipologia/Formato & \multicolumn{3}{|c|}{$500 \mu F$} & \multicolumn{3}{|c|}{$1000 \mu F$} & \multicolumn{3}{|c|}{$1500 \mu F$} \\
+ \hline
+                   & Al & Cer. & Cu & Al & Cer. & Cu & Al & Cer. & Cu \\
+ \hline
+ Elettrolitico     & 5  &    0     &  5 & 7  &     0    & 7  &  10  &     0    & 10  \\
+ \hline
+ Ceramico          & 2  &    2     &  2 & 4  &    4     & 4  & 5  &      5    & 5  \\
+ \hline
+\end{tabular}
+\end{center}
+\subsection{Altri Vincoli}
+Il magazzino dell'azienda può contenere 2517 unità di Alluminio, 951 unità di Ceramica e 2439 unità di Rame utilizzabili. L'azienda si rifornisce di materiali tramite tre aziende fornitrici. Ciascuna azienda produce solo certi tipi di materiali e li vende ad un prezzo specifico (in euro). La seguente tabella riporta tali prezzi. \\
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+           & Al & Cer. & Cu \\
+\hline
+Azienda 1  & 3.0  &  4.0   & 5.0  \\
+\hline
+Azienda 2  & 2.0  &  5.0   & 3.0  \\
+\hline
+Azienda 3  & 4.0  &  3.0   & 4.0  \\
+\hline
+\end{tabular}
+\end{center}
+ L'azienda 3 impone al cliente un contratto d'acquisto esclusivo per l'alluminio e in cambio offre un premio in denaro che ammonta a 5000 euro se la quantità di unità complessive supera 220 (Precisazione: questo premio è disponibile solo se si aderisce a tale contratto acquistando alluminio solo dall'azienda 3). L'azienda 1 invece è disposta a vendere soltanto partite in quantità superiori a 100. \\
+ In totale è necessario produrre almeno 50 unità di condensatori a $500 \mu F$, 100 unità a $1000 \mu F$ e 50 unità a $1500 \mu F$. Inoltre esistono politiche aziendali che impongono che i condensatori elettrolitici costituiscano almeno il 30\% delle unità prodotte e che venga venduta una sola tipologia di condensatori a $1000 \mu F$.
+ \subsection{Funzione Obiettivo}
+ L'obiettivo dell'azienda produttrice di condensatori è massimizzare il guadagno (ovvero la differenza tra ricavo e costi). 
+\section{Modellazione del problema}
+\subsection{Principali variabili e definizione generale della funzione obiettivo}
+Inizialmente si stabiliscono le variabili che rappresentano il numero di condensatori prodotti per ogni coppia tipologia-classe : \\
+\begin{gather*}
+C_{i,j}=\# \text{ condensatori del tipo i e di categoria j prodotti} \\
+C_{i,j} \in \mathbb{Z}_+
+\end{gather*}
+Altre variabili utili a definire la funzione obiettivo sono quelle che rappresentano la quantità di materiali acquistati dai rispettivi produttori: \\
+\begin{gather*}
+M_{m,a}=\# \text{ unità di materiale m acquistato dall'azienda a} \\
+M_{m,a} \in \mathbb{Z}_+
+\end{gather*}
+Inoltre definiamo delle costanti $V_{i,j} \in \mathbb{R}_+$ che rappresentano il prezzo di vendita per unità di prodotto e $A_{m,a} \in \mathbb{R}_+$ che rappresentano il prezzo di acquisto per unità di materiale.
+La funzione obiettivo può quindi essere definita così: \\
+\begin{equation}
+\text{max } \underbrace{\sum_{i,j}^{} V_{i,j}*C_{i,j}}_{ricavo} - \underbrace{\sum_{m,a} A_{m,a}*M_{m,a}}_{costi}
+\end{equation}
+\subsection{Vincoli prodotto/materiale}
+Si definisce l'insieme di costanti $E_{m,i,j} \in \mathbb{Z}_+$ che rappresentano il numero di unità di materiale m utilizzate durante la produzione di un condensatore di tipologia i e classe j.
+I seguenti vincoli legano la quantità di ciascun materiale acquistato al numero di condensatori prodotti: \\
+\begin{gather*}
+\text{s.t. } \sum_{i,j} E_{m,i,j}*C_{i,j} \leq \sum_{a} M_{m,a} \\
+\forall m
+\end{gather*}
+Nota: i vincoli non sono di uguaglianza. Pertanto è consentito all'azienda di effettuare un approvvigionamento superiore a quanto sia realmente necessario per la produzione (ciò potrebbe essere utile in caso di ottenimento di bonus o sconti sull'intera partita)
+\subsection{Vincoli di approvvigionamento e produzione}
+Innanzitutto stabiliamo i vincoli di capienza per i magazzini (le capienze massime fanno riferimento a quelle precedentemente enunciate nella descrizione del problema): \\
+\begin{gather*}
+\text{s.t. } \sum_{a} M_{"Alluminio",a} \leq 2517\\
+\text{s.t. } \sum_{a} M_{"Ceramica",a} \leq 951\\
+\text{s.t. } \sum_{a} M_{"Rame",a} \leq 2439
+\end{gather*}
+Stabiliamo inoltre la produzione minima per ogni classe di condensatore... \\
+\begin{gather*}
+\text{s.t. } \sum_{i} C_{i,"500 \mu F"} \geq 50 \\
+\text{s.t. } \sum_{i} C_{i,"1000 \mu F"} \geq 100 \\
+\text{s.t. } \sum_{i} C_{i,"1500 \mu F"} \geq 50 \\
+\end{gather*}
+..., la quota di mercato per i condensatori elettrolitici... \\
+\begin{equation}
+\text{s.t. } \sum_{j} C_{"Elettrolitico",j} \geq \frac{30}{100}*\sum_{i,j} C_{i,j}
+\end{equation}
+... e la dimensione della partita minima per l'azienda 1
+\begin{equation}
+\text{s.t. } \sum_{m} M_{m,"Azienda 1"} \geq 100
+\end{equation}
+\subsection{Vincoli con variabili logiche}
+Può essere prodotta una sola tipologia di condensatori a $1000 \mu F$. Definiamo quindi una variabile booleana per ogni tipologia di condensatore: \\
+\begin{gather*}
+T_{i}=\left \{
+\begin{tabular}{cc}
+0 & $C_{i,"1000 \mu F"} = 0$ \\
+1 & $C_{i,"1000 \mu F"} >0$
+\end{tabular}
+\right. \\
+T_{i} \in \{ 0,1\}
+\end{gather*}
+Attiviamo tali variabili (Big è una costante molto grande): \\
+\begin{gather*}
+\text{s.t. } C_{i,"1000 \mu F"} \leq Big*T_{i} \\
+\forall i
+\end{gather*}
+Ora possiamo mettere in relazione tra loro le variabili: \\
+\begin{equation}
+\text{s.t. } \sum_{i} T_{i} =1
+\end{equation}
+Infine per modellare il contratto di esclusività imposto dall'azienda 3, è necessario introdurre nuove variabili decisionali:
+\begin{gather*}
+U_{a}=\left \{
+\begin{tabular}{cc}
+0 & $M_{"Alluminio",a} = 0$ \\
+1 & $M_{"Alluminio",a} >0$
+\end{tabular}
+\right. \\
+U_{a} \in \{ 0,1\}
+\end{gather*}
+Attiviamo queste variabili:
+\begin{gather*}
+\text{s.t. } M_{"Alluminio",a} \leq Big*U_{a} \\
+\forall a
+\end{gather*}
+Dal punto di vista logico imporre l'esclusività per un'azienda equivale a soddisfare la seguente espressione logica: \\
+\begin{equation}
+\underbrace{(U_{0} \lor ... U_{"Azienda 3"-1})}_{U_{ex}} \oplus U_{"Azienda 3"}
+\end{equation}
+Esprimiamo $U_{ex}$ tramite un vincolo: \\
+\begin{equation}
+\text{s.t. } \sum_{a-\{"Azienda 3"\}} U_{a} \leq \underbrace{card(a-\{"Azienda 3"\})}_{\text{oppure \#a - 1}}*U_{ex}
+\end{equation}
+Ora che abbiamo attivato $U_{ex}$, esprimiamo il vincolo di esclusività con $U_{"Azienda 3"}$: \\
+\begin{equation}
+U_{ex} + U_{"Azienda 3"} = 1
+\end{equation}
+Ora che abbiamo modellato la condizione di esclusività, è necessario modellare la condizione di superamento della soglia minima per la ricezione del premio in denaro. Chiamiamo $P$ una variabile booleana così definita:
+\begin{gather*}
+P=\left \{
+\begin{tabular}{cc}
+0 & $\sum_{m} M_{m,"Azienda 3"} <220$ \\
+1 & $\sum_{m} M_{m,"Azienda 3"} \geq 220$
+\end{tabular}
+\right. \\
+P \in \{ 0,1\} \\
+\end{gather*}
+Attiviamo $P$:
+\begin{equation}
+\sum_{m} M_{m,"Azienda 3"} -220\leq Big*P
+\end{equation}
+Creiamo un'ultima variabile decisionale $S=U_{"Azienda 3"} \land P$: \\
+\begin{equation}
+U_{"Azienda 3"} + P \geq 2*S
+\end{equation}
+Nota: in caso $U_{"Azienda 3"}$ e $P$ siano entrambi uguali a 1, S può assumere il valore spurio 0. Tuttavia siccome se $S=1$ viene garantito uno sconto sull'acquisto delle merci da Azienda 3, il valore spurio non verrà mai considerato perchè condurrà ad una soluzione sub-ottima. \\
+Essendo $S$ la variabile decisionale che stabilisce se il premio sia applicabile o meno, modifichiamo la funzione obiettivo in questo modo: \\
+\begin{equation}
+\text{max } \underbrace{\sum_{i,j}^{} V_{i,j}*C_{i,j}}_{ricavo} - \underbrace{\sum_{m,a} A_{m,a}*M_{m,a}}_{costi} + \underbrace{Bonus*S}_{premio}
+\end{equation}
+\subsection{Modello generale conclusivo}
+In conclusione il modello, generalizzando opportunamente alcune costanti, si presenta così: \\
+\subsubsection{Insiemi(o Set)}
+$I=\{"Elettrolitico","Ceramico"\}$:\text{ insieme di tipologie di condensatore} \\
+$J=\{"500 \mu F","1000 \mu F","1500 \mu F"\}$:\text{ insieme di classi di capacità} \\
+$M=\{"Alluminio","Ceramica","Rame"\}$:\text{ insieme dei tipi di materiali} \\
+$A=\{"Azienda 1","Azienda 2","Azienda 3"\}$:\text{ insieme di aziende fornitrici}
+
+\subsubsection{Costanti(o Parametri)}
+$V_{i,j}:i \in I, j \in J =\text{ prezzo per unità di prodotto di tipo i e classe j}$ \\
+$(V_{i,j} \in \mathbb{R}_+)$ \\
+$A_{m,a}:m \in M, a \in A =\text{ prezzo per unità di materiale m presso l'azienda a}$ \\
+$(A_{m,a} \in \mathbb{R}_+)$ \\
+$E_{m,i,j}:m \in M, i \in I, j \in J =$ numero di unità di m utilizzate per la produzione di un condensatore di tipo i e classe j\\
+$(E_{m,i,j} \in \mathbb{Z}_+)$ \\
+$X_{m}: m \in M =$ capienza massima del magazzino per il materiale m \\
+$(X_{m} \in \mathbb{Z}_+)$ \\
+$M_{j}: j \in J =$ produzione minima per condensatori di classe j \\
+$(M_{j} \in \mathbb{Z}_+)$ \\
+$Per =$ quota di mercato minima per i condensatori elettrolitici (in percentuale) \\
+$(Per \in \{0,100\} )$ \\
+$K =$ partita minima acquistabile da Azienda 1 \\
+$(K \in \mathbb{Z}_+)$ \\
+$L =$ grandezza minima per la partita da Azienda 3 per ottenere il premio \\
+$(L \in \mathbb{Z}_+)$ \\
+$Bonus =$ valore del bonus \\
+$(Bonus \in \mathbb{R}_+)$ \\
+$Big =$ valore molto grande \\
+$(Big \in \mathbb{R}_+)$
+
+\subsubsection{Variabili}
+$C_{i,j}:i \in I, j \in J =\# \text{ condensatori del tipo i e di categoria j prodotti}$ \\
+$(C_{i,j} \in \mathbb{Z}_+)$ \\
+$M_{m,a}:m \in M, a \in A =\# \text{ unità di materiale m acquistato dall'azienda a}$ \\
+$(M_{m,a} \in \mathbb{Z}_+)$ \\
+$T_{i} =$ vera se vengono prodotti condensatori a $1000 \mu F$ di tipo i \\
+$(T_{i} \in \{ 0,1\} )$ \\
+$U_{a}:a \in A =$ vera se vengono acquistato dell'alluminio dall'azienda a \\
+$(U_{a} \in \{ 0,1\} )$ \\
+$U_{ex} =$ vera se viene acquistato alluminio da almeno un azienda diversa da Azienda 3 \\
+$(U_{ex} \in \{ 0,1\} )$ \\
+$P =$ vera se il numero di unità di materiale acquistato da Azienda 3 è maggiore o uguale a $L$ \\
+$(P \in \{ 0,1\} )$ \\
+$S =U_{"Azienda 3"} \land P$, vera se è possibile ottenere il premio di Azienda 3 \\
+$(S \in \{ 0,1\} )$
+
+\subsubsection{Funzione Obiettivo e Vincoli}
+\begin{gather*}
+\text{max } \underbrace{\sum_{i \in I,j \in J}^{} V_{i,j}*C_{i,j}}_{ricavo} - \underbrace{\sum_{m \in M,a \in A} A_{m,a}*M_{m,a}}_{costi} + \underbrace{Bonus*S}_{premio} \\
+\text{s.t. } \sum_{i \in I,j \in J} E_{m,i,j}*C_{i,j} \leq \sum_{a \in A} M_{m,a} :\forall m \in M \\
+\sum_{a \in A} M_{m,a} \leq X_{m} :\forall m \in M \\
+\sum_{i \in I} C_{i,j} \geq M_{j} :\forall j \in J \\
+\sum_{j \in J} C_{"Elettrolitico",j} \geq \frac{Per}{100}*\sum_{i \in I,j \in J} C_{i,j} \\
+\sum_{m \in M} M_{m,"Azienda 1"} \geq K \\
+C_{i,"1000 \mu F"} \leq Big*T_{i} :\forall i \in I \\
+\sum_{i \in I} T_{i} = 1 \\
+M_{"Alluminio",a} \leq Big*U_{a} :\forall a \in A \\
+\sum_{a \in A-\{"Azienda 3"\}} U_{a} \leq card(A-\{"Azienda 3"\})*U_{ex} \\
+U_{ex} + U_{"Azienda 3"} = 1 \\
+\sum_{m \in M} M_{m,"Azienda 3"} -L\leq Big*P \\
+U_{"Azienda 3"} + P \geq 2*S
+\end{gather*}
+\section{Note su AMPL}
+Per il calcolo della soluzione ottima è stato utilizzato il solver cplex.\\
+Elenco dei File:
+\begin{itemize}
+\item{File del Modello: CondensSrl.mod}
+\item{File dei Dati: CondensSrl.dat}
+\item{File dei Comandi: CondensSrl.run}
+\end{itemize}
+I nomi delle variabili e dei parametri differiscono da quelli presenti in questa relazione per esigenze di spazio.
+Tuttavia essendo sia il file del modello che quello dei dati adeguatamente commentati, il codice AMPL risulta sufficientemente espressivo.
+\subsection{Soluzione ottima al problema}
+Valore ottimo della funzione obiettivo o guadagno massimo: 6812\\
+Valori ottimi di $C_{i,j}$ o numero di condensatori venduti: \\
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+             & Elettrolitico & Ceramico \\
+\hline
+$500 \mu F$  &       0       &    50    \\
+\hline
+$1000 \mu F$ &       212     &    0     \\
+\hline
+$1500 \mu F$ &       0       &    170   \\
+\hline
+\end{tabular}
+\end{center}
+Valori ottimi di $M_{m,a}$ o numero di materiali acquistati: \\
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+         & Alluminio & Ceramica & Rame \\
+\hline
+Azienda1 &     0     &    100   &  0   \\
+\hline
+Azienda2 &     0     &    0     &  2434\\
+\hline
+Azienda3 &     2434  &    850   &  0   \\
+\hline
+\end{tabular}
+\end{center}
+\subsubsection{Valori delle variabili booleane}
+\begin{itemize}
+\item{$T_{"Elettrolitico"}=1$, $T_{"Ceramico"}=0$}
+\item{$U_{"Azienda 1"}=0$, $U_{"Azienda 2"}=0$, $U_{"Azienda 3"}=1$, $U_{ex}=0$}
+\item{$P=1$, $S=1$}
+\end{itemize}
+\subsection{Considerazioni sulla soluzione ottima}
+Come previsto nessuna variabile booleana ha assunto valori spuri in quanto condurrebbero a soluzioni ammissibili ma non ottime. \\
+Nonostante Azienda 3 venda alluminio ad un prezzo superiore rispetto alla concorrenza, il contratto di esclusività risulta vantaggioso e quindi, pur di ottenere il premio, si è disposti ad avere dei costi maggiori.
+\end{document}
