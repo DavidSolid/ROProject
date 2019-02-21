@@ -1,0 +1,7 @@
+reset;
+option solver cplex;
+model CondensSrl.mod;
+data CondensSrl.dat;
+solve;
+display NumCond;
+display NumMat;

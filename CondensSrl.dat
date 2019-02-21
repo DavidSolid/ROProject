@@ -1,0 +1,45 @@
+#insiemi
+set Tipo := Elettrolitico Ceramico;
+set ElTipo := Elettrolitico; #within Tipo
+set Class := 500 1000 1500;
+set 1000Class := 1000; #within Class
+set Materials := Alluminio Ceramica Rame;
+set AlMat := Alluminio; #within Materials
+set Company := Azienda1 Azienda2 Azienda3;
+set Company1 := Azienda1; #within Company
+set Company3 := Azienda3; #within Company
+
+#parametri
+param Vendita(tr): Elettrolitico Ceramico :=
+    500            30            20
+    1000           50            40
+    1500           70            60; #{Tipo,Class}
+
+param Acquisto(tr): Alluminio Ceramica Rame := 
+    Azienda1        3         4        5
+    Azienda2        2         5        3
+    Azienda3        4         3        4; #{Materials,Company}
+
+param Elementi :=
+      [*,Elettrolitico,*](tr) : Alluminio Ceramica Rame :=
+                          500   5         0        5
+                          1000  7         0        7
+                          1500  10        0        10
+      [*,Ceramico,*](tr)      : Alluminio Ceramica Rame :=
+                          500   2         2        2
+                          1000  4         4        4
+                          1500  5         5        5; #{Materials,Tipo,Class}
+
+param Capienza := Alluminio 2517
+                  Ceramica  951
+                  Rame      2439; #{Materials}
+                  
+param Minimo := 500  50
+                1000 100
+                1500 50; #{Class}
+                
+param Percent := 30;
+param PartMin1 := 100;
+param PartMinPremio := 220; #250
+param Bonus := 5000;
+param Big := 100000;
